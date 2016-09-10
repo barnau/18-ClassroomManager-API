@@ -23,13 +23,14 @@ namespace Classroom.Api.Controllers
             return db.Assignments;
         }
 
-        // GET: api/Assignments/5
+        // GET: api/Assignments/5/4
         [ResponseType(typeof(Assignment))]
-        public IHttpActionResult GetAssignment(int id)
+        [HttpGet, Route("api/assignments/{studentId}/{projectId}")]
+        public IHttpActionResult GetAssignment(int studentId, int projectId)
         {
             //Assignment assignment = db.Assignments.Find(id);
 
-            var result = db.Assignments.Where(a => a.StudentId == id);
+            var result = db.Assignments.Where(a => a.StudentId == studentId && a.ProjectId == projectId);
 
             if (result == null)
             {
@@ -41,19 +42,27 @@ namespace Classroom.Api.Controllers
 
         // PUT: api/Assignments/5
         [ResponseType(typeof(void))]
-        public IHttpActionResult PutAssignment(int id, Assignment assignment)
+        [HttpPut, Route("api/assignments/{studentId}/{projectId}")]
+        public IHttpActionResult PutAssignment(int studentId, int projectId, Assignment assignment)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (id != assignment.StudentId)
+            if (studentId != assignment.StudentId || projectId != assignment.ProjectId)
             {
                 return BadRequest();
             }
 
-            db.Entry(assignment).State = EntityState.Modified;
+            //db.Entry(assignment).State = EntityState.Modified;
+
+            //var assignmentToBeUpdated = db.Students.Find(studentId);
+
+            var assignmentToBeUpdated = db.Assignments.FirstOrDefault(a => a.StudentId == studentId && a.ProjectId == projectId);
+
+            db.Entry(assignmentToBeUpdated).CurrentValues.SetValues(assignment);
+            db.Entry(assignmentToBeUpdated).State = EntityState.Modified;
 
             try
             {
@@ -61,7 +70,7 @@ namespace Classroom.Api.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!AssignmentExists(id))
+                if (!AssignmentExists(studentId, projectId))
                 {
                     return NotFound();
                 }
@@ -91,7 +100,7 @@ namespace Classroom.Api.Controllers
             }
             catch (DbUpdateException)
             {
-                if (AssignmentExists(assignment.StudentId))
+                if (AssignmentExists(assignment.StudentId, assignment.ProjectId))
                 {
                     return Conflict();
                 }
@@ -106,9 +115,10 @@ namespace Classroom.Api.Controllers
 
         // DELETE: api/Assignments/5
         [ResponseType(typeof(Assignment))]
-        public IHttpActionResult DeleteAssignment(int id)
+        [HttpDelete, Route("api/assignments/{studentId}/{projectId}")]
+        public IHttpActionResult DeleteAssignment(int studentId, int projectId)
         {
-            Assignment assignment = db.Assignments.Find(id);
+            Assignment assignment = db.Assignments.Find(studentId, projectId);
             if (assignment == null)
             {
                 return NotFound();
@@ -129,9 +139,9 @@ namespace Classroom.Api.Controllers
             base.Dispose(disposing);
         }
 
-        private bool AssignmentExists(int id)
+        private bool AssignmentExists(int studentId, int projectId)
         {
-            return db.Assignments.Count(e => e.StudentId == id) > 0;
+            return db.Assignments.Count(e => e.StudentId == studentId && e.ProjectId == projectId) > 0;
         }
     }
 }
